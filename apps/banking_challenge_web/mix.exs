@@ -30,11 +30,11 @@ defmodule BankingChallengeWeb.MixProject do
 
   defp deps do
     [
+      {:banking_challenge, in_umbrella: true},
       {:phoenix, "~> 1.5.8"},
       {:phoenix_ecto, "~> 4.0"},
       {:telemetry_metrics, "~> 0.4"},
       {:telemetry_poller, "~> 0.4"},
-      {:banking_challenge, in_umbrella: true},
       {:jason, "~> 1.0"},
       {:plug_cowboy, "~> 2.0"}
     ]
