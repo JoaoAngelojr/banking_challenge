@@ -9,3 +9,12 @@
 #
 # We recommend using the bang functions (`insert!`, `update!`
 # and so on) as they will fail if something goes wrong.
+
+BankingChallenge.Repo.insert!(
+  %BankingChallenge.Accounts.Schemas.Account{
+    owner_name: "Some User Name",
+    email: "some.email@email.com.br",
+    balance: 1000
+  },
+  on_conflict: :nothing
+)
