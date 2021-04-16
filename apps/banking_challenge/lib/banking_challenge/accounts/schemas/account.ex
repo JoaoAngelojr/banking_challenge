@@ -8,8 +8,10 @@ defmodule BankingChallenge.Accounts.Schemas.Account do
 
   @email_regex ~r/^[A-Za-z0-9\._%+\-+']+@[A-Za-z0-9\.\-]+\.[A-Za-z]{2,4}$/
 
-  @required [:owner_name, :email]
+  @required [:owner_name, :email, :balance]
   @optional []
+
+  @derive {Jason.Encoder, except: [:__meta__]}
 
   @primary_key {:id, Ecto.UUID, autogenerate: true}
   schema "accounts" do
