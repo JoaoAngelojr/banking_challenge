@@ -10,5 +10,6 @@ defmodule BankingChallengeWeb.Router do
 
     post("/accounts/create", AccountController, :create)
     post("/accounts/withdraw", AccountController, :withdraw)
+    post("/accounts/transfer", AccountController, :transfer)
   end
 end
