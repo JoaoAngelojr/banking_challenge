@@ -4,10 +4,14 @@ defmodule BankingChallenge.Accounts do
   """
 
   alias BankingChallenge.Accounts.Inputs.Create
+  alias BankingChallenge.Accounts.Inputs.Withdraw
   alias BankingChallenge.Accounts.Schemas.Account
   alias BankingChallenge.Repo
+  alias Ecto.Multi
 
   require Logger
+
+  import Ecto.Query
 
   @doc """
   Given a VALID changeset it attempts to insert a new account.
@@ -40,5 +44,42 @@ defmodule BankingChallenge.Accounts do
     Ecto.ConstraintError ->
       Logger.error("Email already taken.")
       {:error, :email_conflict}
+  end
+
+  def withdraw_account(%Withdraw{} = input) do
+    Logger.info("Withdrawing amount")
+
+    params = %{email: input.email, amount: input.amount}
+
+    case get_account_and_withdraw(params) do
+      {:ok, %{update: %Account{} = updated}} ->
+        Logger.info("Withdraw successfully made.")
+        {:ok, updated}
+
+      {:error, _, %Ecto.Changeset{} = changeset, _} ->
+        Logger.info("Error while withdrawing amount.")
+        {:error, changeset}
+    end
+  end
+
+  def get_account_and_withdraw(params) do
+    Multi.new()
+    |> Multi.run(:account, fn repo, _changes ->
+      Account
+      |> lock("FOR UPDATE")
+      |> repo.get_by(email: params.email)
+      |> case do
+        nil ->
+          {:error, :account_not_found}
+
+        account ->
+          {:ok, account}
+      end
+    end)
+    |> Multi.run(:update, fn repo, %{account: account} ->
+      Account.balance_changeset(account, %{balance: account.balance - params.amount})
+      |> repo.update()
+    end)
+    |> Repo.transaction()
   end
 end
