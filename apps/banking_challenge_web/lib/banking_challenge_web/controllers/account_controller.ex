@@ -7,6 +7,7 @@ defmodule BankingChallengeWeb.AccountController do
   alias BankingChallenge.Accounts
   alias BankingChallenge.Accounts.Inputs.Create
   alias BankingChallenge.Accounts.Inputs.Withdraw
+  alias BankingChallenge.Accounts.Inputs.Transfer
   alias BankingChallengeWeb.InputValidation
 
   @doc """
@@ -34,6 +35,21 @@ defmodule BankingChallengeWeb.AccountController do
     with {:ok, input} <- InputValidation.cast_and_apply(params, Withdraw),
          {:ok, account} <- Accounts.withdraw_account(input) do
       send_json(conn, 200, account)
+    else
+      {:error, _changeset} ->
+        msg = %{type: "bad_input", description: "Insuficient balance"}
+        send_json(conn, 400, msg)
+    end
+  end
+
+  @doc """
+  Tranfer between accounts action.
+  """
+  def transfer(conn, params) do
+    with {:ok, input} <- InputValidation.cast_and_apply(params, Transfer),
+         :ok <- Accounts.transfer(input) do
+      msg = %{type: "success", description: "Transfer successfully made"}
+      send_json(conn, 200, msg)
     else
       {:error, _changeset} ->
         msg = %{type: "bad_input", description: "Insuficient balance"}

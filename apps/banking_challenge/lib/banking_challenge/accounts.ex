@@ -5,6 +5,7 @@ defmodule BankingChallenge.Accounts do
 
   alias BankingChallenge.Accounts.Inputs.Create
   alias BankingChallenge.Accounts.Inputs.Withdraw
+  alias BankingChallenge.Accounts.Inputs.Transfer
   alias BankingChallenge.Accounts.Schemas.Account
   alias BankingChallenge.Repo
   alias Ecto.Multi
@@ -46,6 +47,13 @@ defmodule BankingChallenge.Accounts do
       {:error, :email_conflict}
   end
 
+  @doc """
+  Given a VALID changeset it attempts to withdraw an amount from an account.
+
+  It might fail if the given account has an insufficient balance.
+  """
+  @spec withdraw_account(Withdraw.t()) ::
+          {:ok, Account.t()} | {:error, Ecto.Changeset.t()}
   def withdraw_account(%Withdraw{} = input) do
     Logger.info("Withdrawing amount")
 
@@ -62,7 +70,30 @@ defmodule BankingChallenge.Accounts do
     end
   end
 
-  def get_account_and_withdraw(params) do
+  @doc """
+  Given a VALID changeset it attempts to transfer an amount between accounts.
+
+  It might fail if the source account has an insufficient balance.
+  """
+  @spec transfer(Transfer.t()) ::
+          :ok | {:error, Ecto.Changeset.t()}
+  def transfer(%Transfer{} = input) do
+    Logger.info("Transferring amount")
+
+    params = %{from_email: input.from_email, to_email: input.to_email, amount: input.amount}
+
+    case get_accounts_and_transfer(params) do
+      {:ok, _} ->
+        Logger.info("Transfer successfully made.")
+        :ok
+
+      {:error, _, %Ecto.Changeset{} = changeset, _} ->
+        Logger.info("Error while transferring amount.")
+        {:error, changeset}
+    end
+  end
+
+  defp get_account_and_withdraw(params) do
     Multi.new()
     |> Multi.run(:account, fn repo, _changes ->
       Account
@@ -81,5 +112,42 @@ defmodule BankingChallenge.Accounts do
       |> repo.update()
     end)
     |> Repo.transaction()
+  end
+
+  defp get_accounts_and_transfer(params) do
+    Multi.new()
+    |> Multi.run(:from_account, fn repo, _changes ->
+      Account
+      |> lock("FOR UPDATE")
+      |> repo.get_by(email: params.from_email)
+      |> case do
+        nil ->
+          {:error, :from_account_not_found}
+
+        from_account ->
+          {:ok, from_account}
+      end
+    end)
+    |> Multi.run(:update_from_account, fn repo, %{from_account: from_account} ->
+      Account.balance_changeset(from_account, %{balance: from_account.balance - params.amount})
+      |> repo.update()
+    end)
+    |> Multi.run(:to_account, fn repo, _changes ->
+      Account
+      |> repo.get_by(email: params.to_email)
+      |> case do
+        nil ->
+          {:error, :to_account_not_found}
+
+        to_account ->
+          {:ok, to_account}
+      end
+    end)
+    |> Multi.run(:update_to_account, fn repo, %{to_account: to_account} ->
+      Account.balance_changeset(to_account, %{balance: to_account.balance + params.amount})
+      |> repo.update()
+    end)
+    |> Repo.transaction()
+    |> IO.inspect()
   end
 end
