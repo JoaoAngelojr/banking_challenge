@@ -8,6 +8,7 @@ defmodule BankingChallengeWeb.Router do
   scope "/api", BankingChallengeWeb do
     pipe_through(:api)
 
-    post("/accounts", AccountController, :create)
+    post("/accounts/create", AccountController, :create)
+    post("/accounts/withdraw", AccountController, :withdraw)
   end
 end

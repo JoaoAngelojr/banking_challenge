@@ -30,4 +30,11 @@ defmodule BankingChallenge.Accounts.Schemas.Account do
     |> validate_number(:balance, greater_than_or_equal_to: 0)
     |> validate_format(:email, @email_regex)
   end
+
+  def balance_changeset(model, params) do
+    model
+    |> cast(params, [:balance])
+    |> validate_required([:balance])
+    |> validate_number(:balance, greater_than_or_equal_to: 0)
+  end
 end
