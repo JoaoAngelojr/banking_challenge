@@ -19,12 +19,8 @@ defmodule BankingChallengeWeb.AccountController do
       send_json(conn, 200, account)
     else
       {:error, %Ecto.Changeset{}} ->
-        msg = %{type: "bad_input", description: "Invalid input"}
+        msg = %{type: "invalid_input", description: "Error while inserting new account"}
         send_json(conn, 400, msg)
-
-      {:error, :email_conflict} ->
-        msg = %{type: "conflict", description: "Email already taken"}
-        send_json(conn, 412, msg)
     end
   end
 
@@ -37,7 +33,7 @@ defmodule BankingChallengeWeb.AccountController do
       send_json(conn, 200, account)
     else
       {:error, _changeset} ->
-        msg = %{type: "bad_input", description: "Insuficient balance"}
+        msg = %{type: "invalid_input", description: "Error while withdrawing amount"}
         send_json(conn, 400, msg)
     end
   end
@@ -52,7 +48,7 @@ defmodule BankingChallengeWeb.AccountController do
       send_json(conn, 200, msg)
     else
       {:error, _changeset} ->
-        msg = %{type: "bad_input", description: "Insuficient balance"}
+        msg = %{type: "invalid_input", description: "Error while transferring amount"}
         send_json(conn, 400, msg)
     end
   end

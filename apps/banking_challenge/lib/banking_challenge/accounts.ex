@@ -7,6 +7,7 @@ defmodule BankingChallenge.Accounts do
   alias BankingChallenge.Accounts.Inputs.Withdraw
   alias BankingChallenge.Accounts.Inputs.Transfer
   alias BankingChallenge.Accounts.Schemas.Account
+  alias BankingChallenge.Accounts.Schemas.Transaction
   alias BankingChallenge.Repo
   alias Ecto.Multi
 
@@ -22,14 +23,14 @@ defmodule BankingChallenge.Accounts do
   """
 
   @spec create_new_account(Create.t()) ::
-          {:ok, Account.t()} | {:error, Ecto.Changeset.t() | :email_conflict}
+          {:ok, Account.t()} | {:error, Ecto.Changeset.t()}
   def create_new_account(%Create{} = input) do
     Logger.info("Inserting new account")
 
     params = %{
       owner_name: input.owner_name,
       email: input.email,
-      balance: 1000
+      balance: 100_000
     }
 
     with %{valid?: true} = changeset <- Account.changeset(params),
@@ -40,11 +41,11 @@ defmodule BankingChallenge.Accounts do
       %{valid?: false} = changeset ->
         Logger.info("Error while inserting new account. Error: #{inspect(changeset)}")
         {:error, changeset}
+
+      {:error, changeset} ->
+        Logger.info("Error while inserting new account. Error: #{inspect(changeset)}")
+        {:error, changeset}
     end
-  rescue
-    Ecto.ConstraintError ->
-      Logger.error("Email already taken.")
-      {:error, :email_conflict}
   end
 
   @doc """
@@ -62,6 +63,13 @@ defmodule BankingChallenge.Accounts do
     case get_account_and_withdraw(params) do
       {:ok, %{update: %Account{} = updated}} ->
         Logger.info("Withdraw successfully made.")
+
+        save_transaction_info(%{
+          type: "WITHDRAW_ACCOUNT",
+          amount: input.amount,
+          source_account_email: input.email
+        })
+
         {:ok, updated}
 
       {:error, _, %Ecto.Changeset{} = changeset, _} ->
@@ -85,6 +93,14 @@ defmodule BankingChallenge.Accounts do
     case get_accounts_and_transfer(params) do
       {:ok, _} ->
         Logger.info("Transfer successfully made.")
+
+        save_transaction_info(%{
+          type: "TRANSFER",
+          amount: input.amount,
+          source_account_email: input.from_email,
+          target_account_email: input.to_email
+        })
+
         :ok
 
       {:error, _, %Ecto.Changeset{} = changeset, _} ->
@@ -149,5 +165,10 @@ defmodule BankingChallenge.Accounts do
     end)
     |> Repo.transaction()
     |> IO.inspect()
+  end
+
+  defp save_transaction_info(params) do
+    Transaction.changeset(params)
+    |> Repo.insert!()
   end
 end
