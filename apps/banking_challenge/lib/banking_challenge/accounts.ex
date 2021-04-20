@@ -16,6 +16,24 @@ defmodule BankingChallenge.Accounts do
   import Ecto.Query
 
   @doc """
+  Fetch an account from the database.
+  """
+  @spec fetch(Ecto.UUID.t()) :: {:ok, Account.t()} | {:error, :not_found}
+  def fetch(account_id) do
+    Logger.debug("Fetch account by id: #{inspect(account_id)}")
+
+    case Repo.get(Account, account_id) do
+      nil ->
+        Logger.info("Account not found")
+        {:error, :not_found}
+
+      account ->
+        Logger.info("Account successfully fetched")
+        {:ok, account}
+    end
+  end
+
+  @doc """
   Given a VALID changeset it attempts to insert a new account.
 
   It might fail due to email unique index and we transform that return
@@ -63,13 +81,6 @@ defmodule BankingChallenge.Accounts do
     case get_account_and_withdraw(params) do
       {:ok, %{update: %Account{} = updated}} ->
         Logger.info("Withdraw successfully made.")
-
-        save_transaction_info(%{
-          type: "WITHDRAW_ACCOUNT",
-          amount: input.amount,
-          source_account_email: input.email
-        })
-
         {:ok, updated}
 
       {:error, _, %Ecto.Changeset{} = changeset, _} ->
@@ -93,14 +104,6 @@ defmodule BankingChallenge.Accounts do
     case get_accounts_and_transfer(params) do
       {:ok, _} ->
         Logger.info("Transfer successfully made.")
-
-        save_transaction_info(%{
-          type: "TRANSFER",
-          amount: input.amount,
-          source_account_email: input.from_email,
-          target_account_email: input.to_email
-        })
-
         :ok
 
       {:error, _, %Ecto.Changeset{} = changeset, _} ->
@@ -126,6 +129,15 @@ defmodule BankingChallenge.Accounts do
     |> Multi.run(:update, fn repo, %{account: account} ->
       Account.balance_changeset(account, %{balance: account.balance - params.amount})
       |> repo.update()
+    end)
+    |> Multi.run(:save_tran_info, fn repo, _changes ->
+      %{
+        type: "WITHDRAW_ACCOUNT",
+        amount: params.amount,
+        source_account_email: params.email
+      }
+      |> Transaction.changeset()
+      |> repo.insert()
     end)
     |> Repo.transaction()
   end
@@ -163,12 +175,17 @@ defmodule BankingChallenge.Accounts do
       Account.balance_changeset(to_account, %{balance: to_account.balance + params.amount})
       |> repo.update()
     end)
+    |> Multi.run(:save_tran_info, fn repo, _changes ->
+      %{
+        type: "TRANSFER",
+        amount: params.amount,
+        source_account_email: params.from_email,
+        target_account_email: params.to_email
+      }
+      |> Transaction.changeset()
+      |> repo.insert()
+    end)
     |> Repo.transaction()
     |> IO.inspect()
-  end
-
-  defp save_transaction_info(params) do
-    Transaction.changeset(params)
-    |> Repo.insert!()
   end
 end

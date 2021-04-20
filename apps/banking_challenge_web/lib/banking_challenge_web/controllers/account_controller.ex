@@ -11,6 +11,22 @@ defmodule BankingChallengeWeb.AccountController do
   alias BankingChallengeWeb.InputValidation
 
   @doc """
+  Fetch a single account details.
+  """
+  def get_account(conn, %{"id" => account_id}) do
+    with {:uuid, {:ok, _}} <- {:uuid, Ecto.UUID.cast(account_id)},
+         {:ok, account} <- Accounts.fetch(account_id) do
+      send_json(conn, 200, account)
+    else
+      {:uuid, :error} ->
+        send_json(conn, 400, %{type: "invalid_input", description: "Not a proper UUID v4"})
+
+      {:error, :not_found} ->
+        send_json(conn, 404, %{type: "invalid_input", description: "Account not found"})
+    end
+  end
+
+  @doc """
   Create account action.
   """
   def create(conn, params) do
