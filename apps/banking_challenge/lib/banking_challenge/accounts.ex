@@ -16,6 +16,14 @@ defmodule BankingChallenge.Accounts do
   import Ecto.Query
 
   @doc """
+  Get all accounts from the database.
+  """
+  def get_all() do
+    Logger.debug("Getting all acoounts.")
+    Repo.all(Account)
+  end
+
+  @doc """
   Fetch an account from the database.
   """
   @spec fetch(Ecto.UUID.t()) :: {:ok, Account.t()} | {:error, :not_found}
@@ -39,7 +47,6 @@ defmodule BankingChallenge.Accounts do
   It might fail due to email unique index and we transform that return
   into an error tuple.
   """
-
   @spec create_new_account(Create.t()) ::
           {:ok, Account.t()} | {:error, Ecto.Changeset.t()}
   def create_new_account(%Create{} = input) do

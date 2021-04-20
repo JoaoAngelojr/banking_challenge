@@ -11,9 +11,17 @@ defmodule BankingChallengeWeb.AccountController do
   alias BankingChallengeWeb.InputValidation
 
   @doc """
+  Get all accounts.
+  """
+  def index(conn, _params) do
+    accounts = Accounts.get_all()
+    send_json(conn, 200, accounts)
+  end
+
+  @doc """
   Fetch a single account details.
   """
-  def get_account(conn, %{"id" => account_id}) do
+  def show(conn, %{"id" => account_id}) do
     with {:uuid, {:ok, _}} <- {:uuid, Ecto.UUID.cast(account_id)},
          {:ok, account} <- Accounts.fetch(account_id) do
       send_json(conn, 200, account)

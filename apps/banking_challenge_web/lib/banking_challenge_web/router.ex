@@ -8,9 +8,11 @@ defmodule BankingChallengeWeb.Router do
   scope "/api", BankingChallengeWeb do
     pipe_through(:api)
 
+    get("/accounts", AccountController, :index)
+    get("/accounts/:id", AccountController, :show)
+
     post("/accounts", AccountController, :create)
     post("/accounts/withdraw", AccountController, :withdraw)
     post("/accounts/transfer", AccountController, :transfer)
-    get("/accounts/:id", AccountController, :get_account)
   end
 end
