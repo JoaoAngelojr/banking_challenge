@@ -6,7 +6,7 @@ defmodule BankingChallenge.Repo.Migrations.CreateAccount do
       add(:id, :uuid, primary_key: true)
       add(:owner_name, :string)
       add(:email, :string)
-      add(:balance, :integer)
+      add(:balance, :bigint)
 
       timestamps()
     end

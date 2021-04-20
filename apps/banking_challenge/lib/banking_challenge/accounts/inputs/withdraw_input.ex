@@ -6,8 +6,6 @@ defmodule BankingChallenge.Accounts.Inputs.Withdraw do
 
   import Ecto.Changeset
 
-  @email_regex ~r/^[A-Za-z0-9\._%+\-+']+@[A-Za-z0-9\.\-]+\.[A-Za-z]{2,4}$/
-
   @required [:email, :amount]
   @optional []
 
@@ -21,7 +19,6 @@ defmodule BankingChallenge.Accounts.Inputs.Withdraw do
     model
     |> cast(params, @required ++ @optional)
     |> validate_required(@required)
-    |> validate_format(:email, @email_regex)
     |> validate_number(:amount, greater_than: 0)
   end
 end

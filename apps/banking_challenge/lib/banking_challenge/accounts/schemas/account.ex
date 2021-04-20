@@ -6,8 +6,6 @@ defmodule BankingChallenge.Accounts.Schemas.Account do
 
   import Ecto.Changeset
 
-  @email_regex ~r/^[A-Za-z0-9\._%+\-+']+@[A-Za-z0-9\.\-]+\.[A-Za-z]{2,4}$/
-
   @required [:owner_name, :email, :balance]
   @optional []
 
@@ -26,9 +24,8 @@ defmodule BankingChallenge.Accounts.Schemas.Account do
     model
     |> cast(params, @required ++ @optional)
     |> validate_required(@required)
-    |> validate_length(:owner_name, min: 3)
     |> validate_number(:balance, greater_than_or_equal_to: 0)
-    |> validate_format(:email, @email_regex)
+    |> unique_constraint(:email)
   end
 
   def balance_changeset(model, params) do
