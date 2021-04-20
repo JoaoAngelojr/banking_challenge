@@ -130,4 +130,46 @@ defmodule BankingChallenge.AccountsTest do
                })
     end
   end
+
+  describe "fetch/1" do
+    test "successfully fetch an account from the DB" do
+      # 1. Arrange
+      assert account =
+               Repo.insert!(%Account{
+                 owner_name: "Some name",
+                 email: "#{Ecto.UUID.generate()}@email.com"
+               })
+
+      # 2. Act and 3. Assert
+      assert {:ok, account} == Accounts.fetch(account.id)
+    end
+
+    test "fail with not_found if no account has the given id" do
+      # 1. Arrange and 2. Act and 3. Assert
+      assert {:error, :not_found} == Accounts.fetch(Ecto.UUID.generate())
+    end
+  end
+
+  describe "get_all/0" do
+    test "successfully get all accounts in DB" do
+      # 1. Arrange
+      assert account1 =
+               Repo.insert!(%Account{
+                 owner_name: "Some name",
+                 email: "#{Ecto.UUID.generate()}@email.com"
+               })
+
+      assert account2 =
+               Repo.insert!(%Account{
+                 owner_name: "Another name",
+                 email: "#{Ecto.UUID.generate()}@email.com"
+               })
+
+      # 2. Act
+      assert accounts = Accounts.get_all()
+
+      # 3. Assert
+      assert length(accounts) == 2
+    end
+  end
 end
